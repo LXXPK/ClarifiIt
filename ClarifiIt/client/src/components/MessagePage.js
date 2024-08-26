@@ -2,26 +2,28 @@ import React, { useEffect, useRef, useState } from 'react';
 import { useSelector } from 'react-redux';
 import { Link, useParams } from 'react-router-dom';
 import Avatar from './Avatar';
-import { FaHandshake ,FaDownload} from 'react-icons/fa';
+import { FaHandshake } from 'react-icons/fa';
+import { IoMdDownload } from "react-icons/io";
 import { FaAngleLeft, FaPlus, FaMicrophone } from 'react-icons/fa6';
 import { FaImage, FaVideo } from 'react-icons/fa6';
 import { IoClose } from 'react-icons/io5';
 import { IoMdSend } from 'react-icons/io';
 import uploadFile from '../helpers/uploadFile';
 import Loading from './Loading';
-import backgroundImage from '../assets/wallapaper.jpeg';
+import backgroundImage from '../assets/wall.jpg';
 import moment from 'moment';
+import { useDispatch } from 'react-redux';
+import { setMood } from '../redux/userSlice';  // Update the path as needed
 
 const MessagePage = () => {
   const params = useParams();
   const socketConnection = useSelector((state) => state?.user?.socketConnection);
   const user = useSelector((state) => state?.user);
-  const [mood, setMood] = useState('');
+  const dispatch = useDispatch();
 
-
-  // Function to handle mood selection
   const handleMoodChange = (selectedMood) => {
     setMood(selectedMood);
+    dispatch(setMood(selectedMood));  // Dispatch the action to update the Redux store
     // Emit mood change to the server (you can implement this)
     if (socketConnection) {
       socketConnection.emit('user-mood', {
@@ -31,12 +33,16 @@ const MessagePage = () => {
     }
   };
 
+
+console.log("find the mood color",user)
+
   const [dataUser, setDataUser] = useState({
     name: '',
     email: '',
     profile_pic: '',
     online: false,
     _id: '',
+    mood:"neutral",
   });
   const [openImageVideoUpload, setOpenImageVideoUpload] = useState(false);
   const [message, setMessage] = useState({
@@ -63,6 +69,7 @@ const MessagePage = () => {
     '/gtg': 'Got to go',
   };
 
+ 
   const expandShortcuts = (text) => {
     let expandedText = text;
     Object.keys(shortcuts).forEach((shortcut) => {
@@ -141,7 +148,9 @@ const MessagePage = () => {
     if (message.text || message.imageUrl || message.videoUrl) {
       if (socketConnection) {
         const expandedText = expandShortcuts(message.text);
+        
         socketConnection.emit('new message', {
+          
           sender: user?._id,
           receiver: params.userId,
           text: expandedText,
@@ -174,8 +183,18 @@ const MessagePage = () => {
     }
   };
 
+
+  const moodColors = {
+    "😊 Happy": 'bg-green-200',
+    "😢 Sad": 'bg-blue-200',
+    "😡 Angry": 'bg-red-200',
+    "😐 Neutral": 'bg-gray-00',
+    // Add more moods as needed
+};
+
+
   return (
-    <div style={{ backgroundImage: `url(${backgroundImage})` }} className='bg-no-repeat bg-cover'>
+    <div style={{ backgroundImage: `url(${backgroundImage})` }} className='bg-no-repeat bg-cover '>
       <header className='sticky top-0 h-16 bg-white flex justify-between items-center px-4'>
         <div className='flex items-center gap-4'>
           <Link to={'/'} className='lg:hidden'>
@@ -196,67 +215,97 @@ const MessagePage = () => {
         </div>
       </header>
 
-      <section className='h-[calc(100vh-128px)] overflow-x-hidden overflow-y-scroll scrollbar relative bg-slate-200 bg-opacity-50'>
+<section className='h-[calc(100vh-128px)]   overflow-x-hidden overflow-y-scroll scrollbar relative bg-slate-200  '>
         <div className='flex flex-col gap-2 py-2 mx-2' ref={currentMessage}>
           {allMessage.map((msg, index) => (
             <div
               key={index}
-              className={`p-1 py-1 rounded w-fit max-w-[280px] md:max-w-sm lg:max-w-md ${user._id === msg?.msgByUserId ? 'ml-auto bg-teal-100' : 'bg-white'}`}
+              className={`p-1 py-1 rounded  border cursor-pointer hover:border-secondary w-fit max-w-[280px] md:max-w-sm lg:max-w-md ${user._id === msg?.msgByUserId ? 'ml-auto bg-teal-100' : 'bg-white'}`}
             >
               <div className='w-full relative'>
-                {msg?.imageUrl && (
-                  <div>
-                    <img src={msg?.imageUrl} className='w-full h-full object-scale-down' alt='Shared Image' />
-                    <a href={msg?.imageUrl} download='image.jpg'>
-                      <button className='ml-2 mt-2  hover:bg-white text-slate-700 font-bold py-2 px-4 rounded-full '>
-                      <FaDownload/>
+                {msg?.imageUrl && <div><img src={msg?.imageUrl} className='w-full h-full object-scale-down' />
+                <a href={msg.imageUrl} download='image.jpg'>
+                      <button className='  hover:bg-white text-slate-700 font-bold py-2 px-4 rounded-full '>
+                      <IoMdDownload/>
                       </button>
                     </a>
-                  </div>
-                )}
-                {msg?.videoUrl && (
-                  <div>
-                    <video src={msg.videoUrl} className='w-full h-full object-scale-down' controls />
-                    <a href={msg.videoUrl} download='video.mp4'>
-                      <button className='bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded mt-2'>
-                        Download Video
-                      </button>
-                    </a>
-                  </div>
-                )}
+                    </div>}
+                {msg?.videoUrl && <div><video src={msg.videoUrl} className='w-full h-full object-scale-down' controls />
+                <a href={msg.videoUrl} download='video.mp4'>
+                <button className='  hover:bg-white text-slate-700 font-bold py-2 px-4 rounded-full '>
+                <IoMdDownload/>
+                </button>
+              </a>
+              </div>}
               </div>
               <p className='px-2'>{msg.text}</p>
               <p className='text-xs ml-auto w-fit'>{moment(msg.createdAt).format('hh:mm')}</p>
             </div>
           ))}
         </div>
+
+        {message.imageUrl && (
+          <div className='w-full h-full sticky bottom-0  bg-slate-700 bg-opacity-30 flex justify-center items-center rounded overflow-hidden'>
+            <div className='w-fit p-2 absolute top-0 right-0 cursor-pointer hover:text-red-600' onClick={handleClearUploadImage}>
+              <IoClose size={30} />
+            </div>
+            <div className='bg-white p-3'>
+              <img src={message.imageUrl} alt='uploadImage' className='aspect-square w-full h-full max-w-sm m-2 object-scale-down' />
+              
+            </div>
+          </div>
+        )}
+
+        {message.videoUrl && (
+          <div className='w-full h-full sticky bottom-0 bg-slate-700 bg-opacity-30 flex justify-center items-center rounded overflow-hidden'>
+            <div className='w-fit p-2 absolute top-0 right-0 cursor-pointer hover:text-red-600' onClick={handleClearUploadVideo}>
+              <IoClose size={30} />
+            </div>
+            <div className='bg-white p-3'>
+              <video src={message.videoUrl} className='aspect-square w-full h-full max-w-sm m-2 object-scale-down' controls muted autoPlay />
+              
+            </div>
+          </div>
+        )}
+
+        {loading && (
+          <div className='w-full h-full flex sticky bottom-0 justify-center items-center'>
+            <Loading />
+          </div>
+        )}
       </section>
 
-      <footer className='sticky bottom-0 left-0 w-full bg-white flex justify-between items-center py-2 h-16 px-4'>
+
+      <footer className='sticky  bottom-0 left-0 w-full  rounded bg-white flex justify-between items-center py-2 h-16 px-4'>
         <div className='relative'>
-          <FaPlus className='cursor-pointer hover:text-primary' onClick={handleUploadImageVideoOpen} />
+          <FaPlus  size={23} className='cursor-pointer hover:text-primary' onClick={handleUploadImageVideoOpen} />
           {openImageVideoUpload && (
-            <div className='absolute bottom-full left-0 bg-white border rounded z-10 p-2 flex gap-4'>
+            <div className='absolute bottom-full left-0 bg-white border hover:border-primary rounded z-10 p-2 flex gap-5 m-1'>
               <label className='cursor-pointer hover:text-primary'>
-                <FaImage />
+                <FaImage 
+                size={23}/>
                 <input type='file' accept='image/*' onChange={handleUploadImage} className='hidden' />
               </label>
               <label className='cursor-pointer hover:text-primary'>
-                <FaVideo />
+                <FaVideo 
+                size={23}/>
                 <input type='file' accept='video/*' onChange={handleUploadVideo} className='hidden' />
               </label>
             </div>
           )}
         </div>
-  <div className='rounded-full'>
+  <div className='rounded-full '>
          {/* Mood selector */}
   {/* Mood selector */}
-  <select onChange={(e) => handleMoodChange(e.target.value)} className='border rounded-full w-13'>
-    <option value="">Mood</option>
-    <option value="happy">😊Happy</option>
-    <option value="sad">😢Sad</option>
-    <option value="angry">😡Anger</option>
+  
+  <select onChange={(e) => handleMoodChange(e.target.value)} className={`border rounded-3xl w-13 ml-1 mr-1  ${moodColors[user.mood]} `}>
+    <option value="">{user.mood}</option>
+    <option value="😐 Neutral">Neutral</option>
+    <option value="😊 Happy">😊Happy</option>
+    <option value="😢 Sad">😢Sad</option>
+    <option value="😡 Angry">😡Anger</option>
     {/* Add more moods as needed */}
+    
   </select>
 
   </div>
@@ -269,29 +318,31 @@ const MessagePage = () => {
             placeholder='Type a message'
             className='flex-1 py-2 px-4 border rounded-full'
           />
-          <button type='button' onClick={handleVoiceInput} className='cursor-pointer hover:text-primary'>
-            <FaMicrophone />
+          <button type='button' onClick={handleVoiceInput} className='cursor-pointer hover:text-primary ml-1 mr-1'>
+            <FaMicrophone 
+            size={23}/>
           </button>
           <button type='submit' className='cursor-pointer hover:text-primary'>
-            <IoMdSend />
+            <IoMdSend 
+            size={23}/>
           </button>
         </form>
       </footer>
 
       {showTerminationOptions && (
-        <div className='absolute top-16 right-4 bg-white border rounded shadow-lg'>
+        <div className='absolute top-16 right-4 bg-slate-300 border  shadow-lg rounded-3xl m-2'>
           {terminationMessages.map((message, index) => (
             <div
               key={index}
-              className='p-2 cursor-pointer hover:bg-gray-100'
+              className='p-2 cursor-pointer hover:bg-gray-100 rounded-3xl '
               onClick={() => handleTerminationOptionClick(message)}
             >
-              {message}
+              {message }
             </div>
           ))}
         </div>
       )}
-      {loading && <Loading />}
+      {/* {loading && <Loading />} */}
     </div>
   );
 };
