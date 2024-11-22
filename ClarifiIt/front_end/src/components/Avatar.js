@@ -6,7 +6,6 @@ import { GoVerified } from "react-icons/go";
 const Avatar = ({userId,name,imageUrl,width,height}) => {
     const onlineUser = useSelector(state => state?.user?.onlineUser)
 
-    //Amit Prajapati
 
     let avatarName = ""
 
